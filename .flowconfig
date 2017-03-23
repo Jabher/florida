@@ -1,0 +1,16 @@
+[ignore]
+.*/__temp__/.*
+
+[include]
+.*/florida/.*
+
+[libs]
+declarations
+
+[options]
+esproposal.class_static_fields=enable
+esproposal.class_instance_fields=enable
+esproposal.export_star_as=enable
+
+[version]
+^0.42.0

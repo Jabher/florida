@@ -1,0 +1,5 @@
+{
+  "presets": ["env"],
+  "plugins": ["syntax-flow", "transform-flow-strip-types", "transform-class-properties", "transform-export-extensions"]
+}
+
