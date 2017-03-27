@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "chai": "^3.5.0",
+    "chai-stats": "^0.3.0",
     "invert-permutation": "latest",
     "iota-array": "latest",
     "is-buffer": "latest",

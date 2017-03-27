@@ -1,6 +1,6 @@
 //@flow
 import * as R from 'ramda';
-import {Tensor} from './Tensor';
+import {Tensor} from './tensors/Tensor';
 import {axpy} from './blas/level1';
 import {get} from './memory';
 
@@ -12,6 +12,6 @@ export function sgd(weights: Tensor, deltas: Tensor[], {learningRate}: { learnin
     });
     return {
         args: deltas,
-        run: (epoch: number) => applyDeltas(deltas)
+        run: (epoch: number) => {applyDeltas(deltas)}
     };
 }

@@ -1,8 +1,7 @@
 //@flow
-import {Tensor} from '../Tensor';
 import {get} from '../memory';
 import gemm from 'ndarray-gemm';
-import {OndemandComputationTensor} from './utility/tensor';
+import {Tensor, OndemandComputationTensor} from '../tensors';
 
 export const multiply = (x: Tensor, y: Tensor) => {
     if (x.shape.length === 2 && y.shape.length === 2) {

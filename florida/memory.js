@@ -1,6 +1,6 @@
 //@flow
 
-import {Tensor} from './Tensor';
+import {Tensor} from './tensors/Tensor';
 import ndarray from 'ndarray';
 const values = new WeakMap();
 

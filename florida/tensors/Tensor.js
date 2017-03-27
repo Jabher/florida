@@ -1,20 +1,25 @@
 //@flow
 import ndarray from 'ndarray';
-export type Shape = [] | [number] | [number, number] | [number, number, number] | [number, number, number, number];
-
-export type InitValue = Float32Array | number | number[] | any;
+import type {InitValue, Shape} from './types';
 
 export class Tensor {
     dependencies: Tensor[] = [];
     shape: Shape;
     init: InitValue;
+    onPass: Array<() => void> = [];
+    afterPass: Array<() => void> = [];
 
     constructor(shape: Shape) {
         this.shape = Object.freeze([...shape]);
     }
 
+    //$FlowFixMe
+    get name(): string {
+        return this.constructor.name;
+    }
+
     bootstrap(init: any = this.init) {
-        if (!init)
+        if (init === undefined)
             throw new Error();
         if (typeof init === 'number')
             init = [init];
@@ -24,13 +29,3 @@ export class Tensor {
         return ndarray(init, this.shape);
     };
 }
-
-export class Value extends Tensor {
-    constructor(shape: Shape, init: InitValue) {
-        super(shape);
-        this.init = init;
-    }
-}
-
-export class Placeholder extends Tensor {}
-
