@@ -60,7 +60,7 @@ describe('Florida computation engine', () => {
             it('should work in runner', () => {
                 const x = new Tensor([1, 1]);
                 const cell = new MemoryCell(x);
-                const y = compute.multiply(cell, new Tensor([1,1], 1));
+                const y = compute.multiply(cell, x);
 
                 {//first iteration; res = 0(init) * 1(input)
                     const [result] = operations.run({returns: [y], accepts: [x], values: [[1]]});
@@ -74,12 +74,12 @@ describe('Florida computation engine', () => {
 
                 {//second iteration; res = 1(prev input) * 10(input)
                     const [result] = operations.run({returns: [y], accepts: [x], values: [[10]]});
-                    expect(result.data[0]).to.equal(1);
+                    expect(result.data[0]).to.equal(10);
                 }
 
                 {//second iteration; res = 10(prev input) * 2(input)
                     const [result] = operations.run({returns: [y], accepts: [x], values: [[2]]});
-                    expect(result.data[0]).to.equal(10);
+                    expect(result.data[0]).to.equal(20);
                 }
 
             })
