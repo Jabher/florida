@@ -1,5 +1,6 @@
 //@flow
-export {Tensor} from './Tensor';
-export {TemporaryTensor, Value, Placeholder} from './TemporaryTensor';
-export {PersistentTensor, MemoryCell} from './PersistentTensor';
+export {MemoryCell} from './MemoryCell';
+export {Value} from './Value';
+export {Placeholder} from './Placeholder';
+
 export {OndemandComputationTensor} from './OndemandComputationTensor';

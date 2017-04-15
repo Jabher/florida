@@ -1,31 +1,34 @@
 //@flow
-import ndarray from 'ndarray';
-import type {InitValue, Shape} from './types';
+import type {InitValue, Shape, ITensor} from './types';
+import {get, set, init, ndarray} from '../compute/_memory';
 
 export class Tensor {
-    dependencies: Tensor[] = [];
+    dependencies: ITensor[] = [];
     shape: Shape;
-    init: InitValue;
+    init: ?InitValue;
     onPass: Array<() => void> = [];
-    afterPass: Array<() => void> = [];
+    isTensor: true;
 
-    constructor(shape: Shape) {
-        this.shape = Object.freeze([...shape]);
+    get(): Float32Array {
+        return get(this);
     }
 
-    //$FlowFixMe
-    get name(): string {
-        return this.constructor.name;
+    set(value: Float32Array): void {
+        set(this, ndarray(value, this.shape));
     }
 
-    bootstrap(init: any = this.init) {
-        if (init === undefined)
-            throw new Error();
-        if (typeof init === 'number')
-            init = [init];
-        if (Array.isArray(init))
-            init = new Float32Array(init);
+    constructor(shape: Shape, init: ?InitValue) {
+        Object.freeze(this.shape = [...shape]);
+        this.init = init;
+    }
 
-        return ndarray(init, this.shape);
-    };
+    _initialized = false;
+
+    initialize() {
+        if (!this._initialized) {
+            set(this, init(this.init, this.shape));
+            this._initialized = true;
+        }
+    }
 }
+

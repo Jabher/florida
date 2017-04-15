@@ -2,25 +2,18 @@
 
 import type {Shape} from './types';
 import {Tensor} from './Tensor';
-
-import zeros from 'zeros';
+import type {ITensor} from './types';
 
 type Computation = () => void;
-type ComputationFactory = (tensor: Tensor) => Computation;
+type ComputationFactory = (tensor: ITensor) => Computation;
 
 export class OndemandComputationTensor extends Tensor {
-    computationName: string;
-
-    constructor(shape: Shape, dependencies: Tensor[], computation: ComputationFactory) {
+    constructor(shape: Shape, dependencies: ITensor[], computation: ComputationFactory) {
         super(shape);
         this.dependencies = dependencies;
 
         this.onPass = [
             computation(this)
         ];
-    }
-
-    bootstrap(init: any) {
-        return zeros(this.shape, 'float32');
     }
 }

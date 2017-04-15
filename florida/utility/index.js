@@ -1,8 +1,8 @@
 //@flow
-import {Tensor} from '../tensors/Tensor';
+import type {ITensor} from '../tensors/types';
 import {toposort} from './toposort';
 
-export function endNodesToList<T: Tensor>(nodes: T[]): T[] {
+export function endNodesToList<T: ITensor>(nodes: T[]): T[] {
     return subgraphToList(nodes, tensor => tensor.dependencies);
 }
 
@@ -12,18 +12,13 @@ export function subgraphToList<T>(nodes: T[], getChildren: (n: T) => T[]): T[] {
     return Array.from(alreadyDiscoveredNodes);
 }
 
-export function afterPassFns(tensorsUsed: Tensor[]) {
-    return tensorsUsed
-        .map(node => node.afterPass)
-        .reduce((a, b) => a.concat(b), []);
-}
 
-export function onPassFns(tensorsUsed: Tensor[]) {
+export function dumpOps(tensorsUsed: ITensor[]) {
     const dependencies = tensorsUsed
         .map(tensor => tensor.dependencies.map(dep => [dep, tensor]))
         .reduce((acc, deps) => [...acc, ...deps], []);
 
     return toposort(tensorsUsed, dependencies)
-        .map(node => node.onPass)
+        .map(node => node.onPass.map(fn => Object.assign(fn, {tensor: node})))
         .reduce((a, b) => a.concat(b), []);
 }

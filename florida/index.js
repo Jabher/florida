@@ -1,4 +1,5 @@
 //@flow
-export * as fn from './fns';
-export * as optimizers from './optimizers';
 export * from './tensors';
+export * as compute from './compute';
+export * as optimizers from './optimizers';
+export * as operations from './operations';
