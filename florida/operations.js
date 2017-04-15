@@ -34,7 +34,7 @@ function initTensors(tensors: ITensor[]): void {
 
 
 export function run({returns, accepts, values}: RunInit) {
-    const tensorsUsed = endNodesToList(returns);
+    const tensorsUsed = endNodesToList(returns).filter(tensor => !accepts.includes(tensor));
     initTensors(tensorsUsed);
     define(accepts, values);
     execute(dumpOps(tensorsUsed));
@@ -62,7 +62,7 @@ export function optimize({optimizers, accepts, values, epochs}: OptimizeInit) {
         epoch,
         batchCounter,
         increment,
-    ];
+    ].filter(tensor => !accepts.includes(tensor));
 
     initTensors(tensorsUsed);
 
