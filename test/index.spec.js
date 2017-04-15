@@ -1,14 +1,14 @@
 //@flow
 import chai, {expect} from 'chai';
 import {get} from '../florida/compute/_memory';
-import {Placeholder, Value, MemoryCell, operations, compute, optimizers} from '../florida';
+import {Tensor, MemoryCell, operations, compute, optimizers} from '../florida';
 import chaiStats from 'chai-stats';
 chai.use(chaiStats);
 
 describe('Florida computation engine', () => {
     describe('no-action', () => {
         it('should perform run pass', () => {
-            const x = new Placeholder([1, 1]);
+            const x = new Tensor([1, 1]);
             const [result] = operations.run({
                 returns: [x],
                 accepts: [x],
@@ -21,8 +21,8 @@ describe('Florida computation engine', () => {
 
     describe('linear transformation', () => {
         it('should perform run pass', () => {
-            const x = new Placeholder([1, 1]);
-            const y = compute.multiply(x, new Value([1, 1], 2));
+            const x = new Tensor([1, 1]);
+            const y = compute.multiply(x, new Tensor([1, 1], 2));
             const [result] = operations.run({
                 returns: [y],
                 accepts: [x],
@@ -33,10 +33,10 @@ describe('Florida computation engine', () => {
         });
 
         it('should perform optimization pass', () => {
-            const x = new Placeholder([1, 1]);
-            const y = new Placeholder([1, 1]);
+            const x = new Tensor([1, 1]);
+            const y = new Tensor([1, 1]);
 
-            const weights = new Value([1, 1], 2);
+            const weights = new Tensor([1, 1], 2);
             const output = compute.multiply(x, weights);
 
             const cost = compute.cost.mse(output, y);
@@ -58,9 +58,9 @@ describe('Florida computation engine', () => {
 
         describe('rnn units', () => {
             it('should work in runner', () => {
-                const x = new Placeholder([1, 1]);
+                const x = new Tensor([1, 1]);
                 const cell = new MemoryCell(x);
-                const y = compute.multiply(cell, new Value([1,1], 1));
+                const y = compute.multiply(cell, new Tensor([1,1], 1));
 
                 {//first iteration; res = 0(init) * 1(input)
                     const [result] = operations.run({returns: [y], accepts: [x], values: [[1]]});
