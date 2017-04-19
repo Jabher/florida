@@ -16,16 +16,22 @@ type Optimizer = (epoch: ITensor, counter: ITensor) => {
 type RunInit = {
     accepts: ITensor[],
     returns: ITensor[],
+}
+
+type RunArgs = {
     values: InitValue[],
 }
 
 type OptimizeInit = {
     optimizers: Optimizer[],
     accepts: ITensor[],
-    values: InitValue[][],
-    epochs: number,
     verbose: number | boolean
 };
+
+type OptimizeArgs = {
+    values: InitValue[][],
+    epochs: number,
+}
 
 function initTensors(tensors: ITensor[]): void {
     for (const tensor of tensors)
@@ -33,13 +39,6 @@ function initTensors(tensors: ITensor[]): void {
 }
 
 
-export function run({returns, accepts, values}: RunInit) {
-    const tensorsUsed = endNodesToList(returns).filter(tensor => !accepts.includes(tensor));
-    initTensors(tensorsUsed);
-    define(accepts, values);
-    execute(dumpOps(tensorsUsed));
-    return returns.map(get);
-}
 
 function define(accepts: ITensor[], values: InitValue[]) {
     for (const [tensor, data] of R.zip(accepts, values)) set(tensor, ndarray(data, tensor.shape));
@@ -50,9 +49,7 @@ function execute(ops) {
         op();
 }
 
-
-export function optimize({optimizers, accepts, values, epochs}: OptimizeInit) {
-    let localEpoch = 1;
+export function compileOptimize({optimizers, accepts, verbose}: OptimizeInit) {
     const epoch = new Tensor([], new Float32Array([1]));
     const batchCounter = new Tensor([], new Float32Array([0]));
     const increment = new Tensor([], new Float32Array([1]));
@@ -75,18 +72,36 @@ export function optimize({optimizers, accepts, values, epochs}: OptimizeInit) {
         ...optimizations.reduce((acc, {applyGradients}) => [...acc, ...applyGradients], []),
         toZeros(batchCounter)
     ];
-
     const afterEpoch = add(increment, epoch);
 
-    while (localEpoch <= epochs) {
-        for (const value of values) {
-            define(accepts, value);
-            execute(ops);
-        }
+    return ({values, epochs}: OptimizeArgs) => {
+        let localEpoch = 1;
+        toZeros(epoch);
 
-        execute([
-            afterEpoch
-        ]);
-        localEpoch += 1;
+        while (localEpoch <= epochs) {
+            for (const value of values) {
+                define(accepts, value);
+                execute(ops);
+            }
+
+            execute([
+                afterEpoch
+            ]);
+            localEpoch += 1;
+        }
+    }
+}
+
+
+export function compileRun({returns, accepts}: RunInit) {
+    const tensorsUsed = endNodesToList(returns).filter(tensor => !accepts.includes(tensor));
+    const ops = dumpOps(tensorsUsed);
+
+    initTensors(tensorsUsed);
+
+    return ({values}: RunArgs) => {
+        define(accepts, values);
+        execute(ops);
+        return returns.map(get);
     }
 }
