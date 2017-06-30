@@ -7,7 +7,7 @@ import { Layer } from "./Layer";
 import ndarray from "ndarray";
 import { axpy, cpsc } from "ndarray-blas-level1";
 import { LossFunction } from "./LossFunction";
-import { zeros } from "../util";
+import { zeros } from "../ndarrayFunctions/util";
 import { dotProduct } from "../ndarrayFunctions/dotProduct";
 
 
@@ -80,8 +80,7 @@ test('model is calling gradient optimizer', async () => {
   const optimizer = new SGD();
   const train = new Model([2])
     .pipe(addLayer)
-    .loss(new MSE())
-    .optimize(optimizer)
+    .optimize(new MSE(), optimizer)
     .compile();
 
 
@@ -126,8 +125,7 @@ test('model is not re-compiling optimizations', async () => {
   const optimizer = new SGD();
   const train = new Model([2])
     .pipe(addLayer)
-    .loss(new MSE())
-    .optimize(optimizer)
+    .optimize(new MSE(), optimizer)
     .compile();
 
 
@@ -179,8 +177,7 @@ test('model is propagating gradient', async () => {
   const train = new Model([2])
     .pipe(addLayer1)
     .pipe(addLayer2)
-    .loss(new MSE())
-    .optimize(optimizer)
+    .optimize(new MSE(), optimizer)
     .compile();
 
 

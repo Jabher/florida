@@ -44,3 +44,11 @@ export class Layer {
     throw new Error("cannot use Layer.compile; you should re-define it yourself in class " + this.constructor.name)
   }
 }
+
+export class ConfigurableLayer<T> extends Layer {
+  config: T;
+  constructor(config: T) {
+    super();
+    this.config = config;
+  }
+}

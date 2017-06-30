@@ -5,7 +5,7 @@ import { Model, PipedModel } from "./Model";
 import { Layer } from "./Layer";
 import ndarray from "ndarray";
 import { cpsc } from "ndarray-blas-level1";
-import { zeros } from "../util";
+import { zeros } from "../ndarrayFunctions/util";
 import { Optimizer } from "./Optimizer";
 
 class BaseTestLayer extends Layer {

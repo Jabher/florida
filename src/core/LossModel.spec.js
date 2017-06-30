@@ -6,10 +6,11 @@ import { Layer } from "./Layer";
 import ndarray from "ndarray";
 import { axpy, cpsc } from "ndarray-blas-level1";
 import { LossFunction } from "./LossFunction";
-import { zeros } from "../util";
+import { zeros } from "../ndarrayFunctions/util";
 import { dotProduct } from "../ndarrayFunctions/dotProduct";
 import { Optimizer } from "./Optimizer";
 import R from 'ramda';
+import type { Shape } from "../types";
 
 class BaseTestLayer extends Layer {
   // compileShape() {
@@ -20,13 +21,14 @@ class BaseTestLayer extends Layer {
     return {
       permuteInput: (data: ndarray) => data,
       permuteGradient: (gradient: ndarray) => gradient,
+      // noinspection JSUnusedLocalSymbols
       compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => {},
     }
   }
 }
 
 class MSE extends LossFunction {
-  compile(shape: number[]) {
+  compile(shape: Shape) {
     const error0 = zeros(shape);
     const error1 = zeros(shape);
     return {
@@ -35,8 +37,7 @@ class MSE extends LossFunction {
         cpsc(-1, yPred, error0);
         //noinspection JSSuspiciousNameCombination
         axpy(1, y, error0);
-        const result = dotProduct(error0, error0);
-        return result;
+        return dotProduct(error0, error0);
       },
       d1: ({ y, yPred }: { y: ndarray, yPred: ndarray }) => {
         //noinspection JSSuspiciousNameCombination
@@ -55,6 +56,7 @@ test('model is producing a loss', async () => {
       return {
         permuteInput: (data: ndarray) => data,
         permuteGradient: (gradient: ndarray) => gradient,
+        // noinspection JSUnusedLocalSymbols
         compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => {},
       }
     }

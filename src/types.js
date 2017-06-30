@@ -9,11 +9,6 @@ export interface ICompilable<I, O> {
   compile<SI: any>(input: Subject<SI, I>): Subject<SI, O>;
 }
 
-export interface ITransform<T> {
-  x: (data: T) => ndarray;
-  y: (data: T) => ndarray;
-}
-
 export type ILossInput = { y: ndarray, x: ndarray };
 
 export type ILossOutput = { y: ndarray, yPred: ndarray };

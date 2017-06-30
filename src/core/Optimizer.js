@@ -1,9 +1,11 @@
 // @flow
 
 import ndarray from 'ndarray';
+import type { Shape } from "../types";
 
 export class Optimizer {
-  compile(shape: number[]): (gradient: ndarray) => void {
+  // noinspection JSUnusedLocalSymbols
+  compile(shape: Shape): (gradient: ndarray) => void {
     throw new Error(`"compile" method of optimizer ${this.constructor.name} should be defined`)
   }
 }

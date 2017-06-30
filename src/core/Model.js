@@ -1,20 +1,16 @@
 // @flow
-
+import { asum } from "ndarray-blas-level1";
 import { Observable } from "rxjs/Observable";
 import { Subject } from "rxjs/Subject";
-import { Layer } from './Layer';
-import * as ndarray from 'ndarray';
+import { Layer } from "./Layer";
+import * as ndarray from "ndarray";
 import "rxjs/add/operator/share";
-import { Optimizer } from './Optimizer';
-import { LossFunction } from './LossFunction';
-import { LossModel } from './LossModel';
+import { Optimizer } from "./Optimizer";
+import { LossFunction } from "./LossFunction";
+import { LossModel } from "./LossModel";
 import "rxjs/add/operator/map";
-import type { ICompilable, Shape } from '../types';
+import type { ICompilable, ILossInput, ILossOutput, Shape } from "../types";
 
-interface ITransform<T> {
-  x: (data: T) => ndarray;
-  y: (data: T) => ndarray;
-}
 
 interface ICompilableModel<I, O> extends ICompilable <I, O> {
   compileInput<SI>(input: Subject<SI, I>): Subject<SI, O>;
@@ -38,6 +34,24 @@ export class BaseModel implements ICompilableModel<ndarray, ndarray> {
   loss<T: Object>(lossFn: LossFunction): LossModel { return new LossModel(lossFn, this); }
 
   compile<SI>(input: Subject<SI, ndarray> = new Subject()): Subject<SI, ndarray> { return this.compileInput(input); }
+
+  compileWithOutput<SI: any>(_input: Subject<SI, ILossInput>): Subject<SI, ILossOutput> {
+    if (!this.inputModel) {
+      return _input;
+    } else {
+      const input = _input.share();
+      return input
+        .map(({ y }) => y)
+        .withLatestFrom(
+          this.inputModel.compileInput(input.map(({ x }) => x)),
+          (y: ndarray, yPred: ndarray) => ({ yPred, y }))
+        .share();
+    }
+  }
+
+  optimize(loss: LossFunction, optimizer: Optimizer): OptimizingModel {
+    return new OptimizingModel(this, loss, optimizer);
+  }
 
   compileInput<SI>(input: Subject<SI, ndarray> = new Subject()): Subject<SI, ndarray> {
     const layerInput = this.inputModel
@@ -103,5 +117,34 @@ export class PipedModel extends BaseModel {
     if (this.compilation.compileApplyOptimizer) {
       return this.compilation.compileApplyOptimizer(optimizer)
     }
+  }
+}
+
+
+export class OptimizingModel implements ICompilable<ILossInput, ndarray> {
+  inputModel: BaseModel;
+  lossFunction: LossFunction;
+  inputShape: Shape;
+  optimizer: Optimizer;
+
+  constructor(inputModel: BaseModel, lossFunction: LossFunction, optimizer: Optimizer) {
+    this.inputModel = inputModel;
+    this.inputShape = this.inputModel.outputShape;
+    this.lossFunction = lossFunction;
+    this.optimizer = optimizer;
+
+    this.lossFunction._compile(this.inputShape);
+  }
+
+  compile<SI>(input: Subject<SI, ILossInput> = new Subject()): Subject<SI, ILossOutput> {
+    const modelOutput = this.inputModel.compileWithOutput(input).share();
+    this.inputModel.applyGradientOptimizer(this.optimizer, modelOutput.map(this.lossFunction.compilation.d1));
+
+    const scaler = this.inputShape.reduce((a, b) => a * b, 1);
+
+    return this.inputModel.compileInput(modelOutput)
+      .map(this.lossFunction.compilation.d0)
+      .map(asum)
+      .map(sum => sum / scaler);
   }
 }
