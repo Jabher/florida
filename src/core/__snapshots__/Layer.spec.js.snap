@@ -1,0 +1,55 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`model is calling compileActivate once 1`] = `
+View2dfloat32 {
+  "data": Float32Array [
+    -1,
+    -2,
+  ],
+  "offset": 0,
+  "shape": Array [
+    1,
+    2,
+  ],
+  "stride": Array [
+    2,
+    1,
+  ],
+}
+`;
+
+exports[`model is emitting data to side-observables 1`] = `
+View2dfloat32 {
+  "data": Float32Array [
+    -1,
+    -2,
+  ],
+  "offset": 0,
+  "shape": Array [
+    1,
+    2,
+  ],
+  "stride": Array [
+    2,
+    1,
+  ],
+}
+`;
+
+exports[`model is passing data 1`] = `
+View2dfloat32 {
+  "data": Float32Array [
+    -1,
+    -2,
+  ],
+  "offset": 0,
+  "shape": Array [
+    1,
+    2,
+  ],
+  "stride": Array [
+    2,
+    1,
+  ],
+}
+`;

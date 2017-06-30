@@ -1,65 +1,54 @@
 # Florida
-### Computation engine for building a neural nets
 
-_current state: under development; performance not optimized_
+A functional reactive neural network framework
+---
+**Florida** is a fully-featured neural net framework built upon 
+[scijs](https://github.com/scijs), 
+the most popular (according to npm) tensor algebra library,
+and [ReactiveX](https://github.com/ReactiveX/rxjs), 
+the cross-language standard of [Functional Reactive Programming](https://en.wikipedia.org/wiki/Functional_reactive_programming),
+which implements Stage 1 [Observable EcmaScript proposal](https://github.com/tc39/proposal-observable)   
 
-As TensorFlow powers the "Big DS", Florida (it's also about data flow, so that's why it is named so) can power JS DS.
+Getting started with neural nets
+---
+A neural network is a deep machine learning technique. 
+What does it mean?
 
-The core difference between common approach of solving DS problems and Florida's is that building the computational graph and executing it are separate functions.
+**Machine learning** is a subfield of computer science that gives computers the ability to learn without being explicitly programmed.
+That means that instead of writing the program a set of examples or some scoring rule, which decide,
+what is a better or worse result, is defined, and the computer is able to reduce its error with time.
 
-If you have some function to run, you need to compile it once, and run it tens of times.
-Simple math - for 100 runs 10 ms loss on compilation stage will be efficient even if every run will get faster for 0.1ms.
+Shallow machine learning techniques - such as linear regression - are directly transforming data into the answer.
+Extrapolation is an example of linear regression.
+![extrapolation](https://imgs.xkcd.com/comics/extrapolating.png)
+_[image source](https://xkcd.com/605/)_
 
-How to use it:
-```javascript
-import {Tensor, MemoryCell, operations, compute} from '../florida';
+**Deep machine learning** is a subset of machine learning techniques which are producing some hidden state.
+For example, neural network trained to detect cats is actually detecting line patterns in pixels, 
+then detects specific shapes of lines, then detects cat shape, which consists of ear shapes, paw shapes and so on.   
 
-// First, you need to define your input.
-// API is new Tensor(shape: Shape, init?: InitValue)
-// Shape is array of numbers; [] means scalar, [number] means vector, [number, number] means matrix
-// InitValue can be number, array of numbers or Float32Array now; random inits will be provided later
-// You can omit init value, in that case init will bootstrap with zeros, if it's not placeholder
-const x = new Tensor([1, 1]);
-// Then - manipulate it in some way (you probably do not need to just pass it back and forth)
-const y = compute.multiply(x, new Tensor([1, 1], 2));
-
-// operation.run is actually a run(compile(graph))
-const [result] = operations.run({
-  returns: [y],
-  accepts: [x],
-  values: [[1]]
-});
-
-result.data // => Float32Array [2]
-```
-
-If you want to execute an optimization, API would be the following:
-```javascript
-const x = new Tensor([1, 1]);
-const y = new Tensor([1, 1]);
-
-const weights = new Tensor([1, 1], 2);
-const output = compute.multiply(x, weights);
-
-//cost.mse is just an ordinary function
-const cost = compute.cost.mse(output, y);
-const delta = compute.multiply(x, cost);
-operations.optimize({
-    optimizers: [
-        // here we annotate a single-op SGD optimizer, which can be re-used later
-        optimizers.sgd(weights, delta, {learningRate: .5})
-    ],
-    
-// You can think about this model as a function that accepts X and Y, 
-// and .optimize "values" field is a list of "arguments" for "accepts"
-    accepts: [x, y],
-    //here we define pairs of arguments to use
-    values: [[
-        new Float32Array([1]), new Float32Array([1])
-    ]],
-    epochs: 10000
-});
+### FRP + Neural Nets
 
 
-weights //=> Float32Array [1.000000007]
-```
+
+#### State of machine learning in JavaScript
+First of all: let's admit that **serious** machine learning is happening in
+CUDA, GPU, ASICs, 
+[TensorFlow](https://www.tensorflow.org/), 
+[Theano](http://deeplearning.net/software/theano/), 
+[MXNet](http://mxnet.io/). 
+That's all Python, C++ and lot of optimizations.
+
+We are unable to provide such performance in JS now - except bindings to C++ libraries.
+Here we can split everything into 2 parts: Node.js and browsers.
+Best thing we can do for Node.js is actually implement TensorFlow bindings; but for taking what we can from browser we're lacking 
+- [WebGPU](https://webkit.org/wp-content/uploads/webgpu-api-proposal.html) - proposal
+- [SIMD](https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/SIMD) - proposal
+- [SharedArrayBuffer](https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer) - already in ES2017; available under flag in browsers
+
+Here we see that we actually _do not_ need crazy machine learning in JS itself; for something big we can rely on TF.
+But we can do what we're missing in other frameworks - 
+integration into UI, 
+simple connection with various inputs - from mouse movements to video, from opened tabs count to network speed.
+
+We can do crazy stuff in ServiceWorkers and in background tabs, and simplicity and flexibility is a bit more important here than performance 

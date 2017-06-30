@@ -11,6 +11,12 @@ declarations
 esproposal.class_static_fields=enable
 esproposal.class_instance_fields=enable
 esproposal.export_star_as=enable
+<<<<<<< Updated upstream
 
 [version]
 ^0.42.0
+=======
+experimental.const_params=false
+module.use_strict=true
+unsafe.enable_getters_and_setters=true
+>>>>>>> Stashed changes

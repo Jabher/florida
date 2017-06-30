@@ -1,5 +1,8 @@
 {
-  "presets": ["env"],
-  "plugins": ["syntax-flow", "transform-flow-strip-types", "transform-class-properties", "transform-export-extensions"]
+  "presets": [
+    ["env", {"node": "8"}],
+    "flow"
+  ],
+  "plugins": ["transform-class-properties", "transform-export-extensions"]
 }
 
