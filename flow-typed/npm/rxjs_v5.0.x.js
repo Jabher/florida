@@ -1,7 +1,5 @@
 // @flow
-// FIXME(samgoldman) Remove top-level interface once Babel supports
-// `declare interface` syntax.
-// FIXME(samgoldman) Remove this once rxjs$Subject<O> can mixin rxjs$Observer<O>
+
 declare class rxjs$Observer<-I> {
   next(value: I): mixed;
   error(error: any): mixed;
@@ -37,7 +35,7 @@ type rxjs$EventListenerOptions = {
   once?: boolean;
 } | boolean;
 
-declare class rxjs$Observable<+T> {
+declare class rxjs$Observable<+O> {
   static bindCallback(callbackFunc: (callback: (_: void) => any) => any, selector: ?void, scheduler: ?rxjs$SchedulerClass): () => rxjs$Observable<void>;
   static bindCallback<U>(callbackFunc: (callback: (result: U) => any) => any, selector: ?void, scheduler: ?rxjs$SchedulerClass): () => rxjs$Observable<U>;
   static bindCallback<T, U>(callbackFunc: (v1: T, callback: (result: U) => any) => any, selector: ?void, scheduler: ?rxjs$SchedulerClass): (v1: T) => rxjs$Observable<U>;
