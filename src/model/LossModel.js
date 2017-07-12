@@ -6,7 +6,7 @@ import * as ndarray from "ndarray";
 import "rxjs/add/operator/withLatestFrom";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/share";
-import { LossFunction } from "./LossFunction";
+import { LossFunction } from "../lossFunctions/LossFunction";
 import { BaseModel } from "./Model";
 import type { ICompilable, ILossHandler, ILossInput, Shape } from "../types";
 import { asum } from "ndarray-blas-level1";

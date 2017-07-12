@@ -1,23 +1,19 @@
 // @flow
 import "rxjs/add/operator/toPromise";
 import "rxjs/add/operator/first";
-import { Model, PipedModel } from "./Model";
+import { Model, PipedModel } from "../model/Model";
 import { Layer } from "./Layer";
 import ndarray from "ndarray";
 import { cpsc } from "ndarray-blas-level1";
 import { zeros } from "../ndarrayFunctions/util";
-import { Optimizer } from "./Optimizer";
+import type { IOptimizer } from "../types";
 
 class BaseTestLayer extends Layer {
-  // compileShape() {
-  //   return this.inputShape
-  // }
-
   compile() {
     return {
       permuteInput: (data: ndarray) => data,
       permuteGradient: (gradient: ndarray) => gradient,
-      compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => {},
+      compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => {}
     }
   }
 }
@@ -138,7 +134,7 @@ test('model is transforming data', async () => {
           return output;
         },
         permuteGradient: (gradient: ndarray) => gradient,
-        compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => {},
+        compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => {}
       }
     }
   }

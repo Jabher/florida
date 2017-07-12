@@ -39,7 +39,10 @@
     "testMatch": [
       "**/src/**/*.spec.js"
     ],
-    "collectCoverage": true
+    "collectCoverage": false,
+    "setupFiles": [
+      "./__test__/setup.js"
+    ]
   },
   "false": {}
 }

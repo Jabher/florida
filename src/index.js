@@ -1,5 +1,5 @@
 //@flow
-export * from "./core";
+export * from "./model";
 export * as layers from "./layers";
-export * as loss from "./loss";
-export * as optimizer from "./optimizer";
+export * as lossFunctions from "./lossFunctions";
+export * as optimizers from "./optimizers";

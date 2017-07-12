@@ -18,3 +18,7 @@ export type ILossHandler = (input: ILossOutput) => ndarray;
 export type IHandler = (input: ndarray) => ndarray;
 
 export type ILossCompilation = { d0: ILossHandler, d1: ILossHandler };
+
+export interface IOptimizer {
+  compile(shape: Shape): (gradient: ndarray) => void
+}

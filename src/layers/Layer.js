@@ -2,9 +2,8 @@
 
 import * as R from 'ramda';
 import { Observable } from "rxjs/Observable";
-import { Optimizer } from "./Optimizer";
 import * as ndarray from 'ndarray';
-import type {Shape, IHandler} from "../types";
+import type {Shape, IHandler, IOptimizer} from "../types";
 
 export class Layer {
   inputShape: Shape;
@@ -13,7 +12,7 @@ export class Layer {
   compilation: {
     permuteInput: IHandler;
     permuteGradient: IHandler;
-    compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => void;
+    compileApplyOptimizer: (optimizer: IOptimizer) => (input: ndarray, gradient: ndarray) => void;
   };
 
   constructor() {
@@ -40,7 +39,7 @@ export class Layer {
     return this.inputShape;
   }
 
-  compile(): { permuteInput: IHandler, permuteGradient: IHandler, compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => void } {
+  compile(): { permuteInput: IHandler, permuteGradient: IHandler, compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => void } {
     throw new Error("cannot use Layer.compile; you should re-define it yourself in class " + this.constructor.name)
   }
 }

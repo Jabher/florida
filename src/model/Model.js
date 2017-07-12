@@ -1,15 +1,15 @@
 // @flow
+import "rxjs/add/operator/share";
+import "rxjs/add/operator/map";
+import "rxjs/add/operator/withLatestFrom";
 import { asum } from "ndarray-blas-level1";
 import { Observable } from "rxjs/Observable";
 import { Subject } from "rxjs/Subject";
-import { Layer } from "./Layer";
+import { Layer } from "../layers/Layer";
 import * as ndarray from "ndarray";
-import "rxjs/add/operator/share";
-import { Optimizer } from "./Optimizer";
-import { LossFunction } from "./LossFunction";
+import { LossFunction } from "../lossFunctions/LossFunction";
 import { LossModel } from "./LossModel";
-import "rxjs/add/operator/map";
-import type { ICompilable, ILossInput, ILossOutput, Shape } from "../types";
+import type { ICompilable, ILossInput, ILossOutput, IOptimizer, Shape } from "../types";
 
 
 interface ICompilableModel<I, O> extends ICompilable <I, O> {
@@ -35,21 +35,26 @@ export class BaseModel implements ICompilableModel<ndarray, ndarray> {
 
   compile<SI>(input: Subject<SI, ndarray> = new Subject()): Subject<SI, ndarray> { return this.compileInput(input); }
 
+  // _compile<SI>(input: Subject<SI, ndarray> = new Subject(), gradient: Subject<any, ndarray>) {
+  //
+  // }
+
   compileWithOutput<SI: any>(_input: Subject<SI, ILossInput>): Subject<SI, ILossOutput> {
-    if (!this.inputModel) {
+    const inputModel = this.inputModel;
+    if (!inputModel) {
       return _input;
     } else {
       const input = _input.share();
       return input
         .map(({ y }) => y)
         .withLatestFrom(
-          this.inputModel.compileInput(input.map(({ x }) => x)),
+          inputModel.compileInput(input.map(({ x }) => x)),
           (y: ndarray, yPred: ndarray) => ({ yPred, y }))
         .share();
     }
   }
 
-  optimize(loss: LossFunction, optimizer: Optimizer): OptimizingModel {
+  optimize(loss: LossFunction, optimizer: IOptimizer): OptimizingModel {
     return new OptimizingModel(this, loss, optimizer);
   }
 
@@ -62,11 +67,12 @@ export class BaseModel implements ICompilableModel<ndarray, ndarray> {
     return output;
   }
 
-  applyGradientOptimizer<SI>(optimizer: Optimizer, _gradient: Subject<SI, ndarray>): void {
+  applyGradientOptimizer<SI>(optimizer: IOptimizer, _gradient: Subject<SI, ndarray>): void {
     const gradient = _gradient.share();
     gradient.subscribe(this.gradient);
     const compiledOptimizer = this.compileOptimizerApplication(optimizer);
     if (compiledOptimizer) {
+      //todo inject input
       gradient.subscribe(compiledOptimizer);
     }
     if (this.inputModel) {
@@ -78,7 +84,7 @@ export class BaseModel implements ICompilableModel<ndarray, ndarray> {
 
   permuteGradient(gradient: Subject<ndarray, ndarray>) { return gradient; }
 
-  compileOptimizerApplication(optimizer: Optimizer): void | (gradient: ndarray) => void {}
+  compileOptimizerApplication(optimizer: IOptimizer): void | (gradient: ndarray) => void {}
 }
 
 export class Model extends BaseModel {
@@ -102,7 +108,7 @@ export class PipedModel extends BaseModel {
   get compilation(): {
     permuteInput: Handler;
     permuteGradient: Handler;
-    compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => void;
+    compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => void;
   } { return this.layer.compilation }
 
   permuteInput(input: Subject<ndarray, ndarray>) {
@@ -113,7 +119,7 @@ export class PipedModel extends BaseModel {
     return gradient.map(this.compilation.permuteGradient);
   }
 
-  compileOptimizerApplication(optimizer: Optimizer): void | (gradient: ndarray) => void {
+  compileOptimizerApplication(optimizer: IOptimizer): void | (gradient: ndarray) => void {
     if (this.compilation.compileApplyOptimizer) {
       return this.compilation.compileApplyOptimizer(optimizer)
     }
@@ -125,9 +131,9 @@ export class OptimizingModel implements ICompilable<ILossInput, ndarray> {
   inputModel: BaseModel;
   lossFunction: LossFunction;
   inputShape: Shape;
-  optimizer: Optimizer;
+  optimizer: IOptimizer;
 
-  constructor(inputModel: BaseModel, lossFunction: LossFunction, optimizer: Optimizer) {
+  constructor(inputModel: BaseModel, lossFunction: LossFunction, optimizer: IOptimizer) {
     this.inputModel = inputModel;
     this.inputShape = this.inputModel.outputShape;
     this.lossFunction = lossFunction;

@@ -2,16 +2,16 @@
 import { Optimizer } from "./Optimizer";
 import "rxjs/add/operator/toPromise";
 import "rxjs/add/operator/first";
-import { Model } from "./Model";
-import { Layer } from "./Layer";
+import { Model } from "../model/Model";
+import { Layer } from "../layers/Layer";
 import ndarray from "ndarray";
 import { axpy, cpsc } from "ndarray-blas-level1";
-import { LossFunction } from "./LossFunction";
+import { LossFunction } from "../lossFunctions/LossFunction";
 import { zeros } from "../ndarrayFunctions/util";
 import { dotProduct } from "../ndarrayFunctions/dotProduct";
 
 
-test('optimizer function forces user to override compile method', () => {
+test('optimizers function forces user to override compile method', () => {
   expect(() => new Optimizer().compile([])).toThrow();
 });
 
@@ -61,7 +61,7 @@ class SGD extends Optimizer {
   }
 }
 
-test('model is calling gradient optimizer', async () => {
+test('model is calling gradient optimizers', async () => {
   const optimizerFn = jest.fn();
   const compileOptimizerFn = jest.fn((optimizer: Optimizer) => optimizerFn);
 

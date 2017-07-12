@@ -2,27 +2,22 @@
 import "rxjs/add/operator/toPromise";
 import "rxjs/add/operator/first";
 import { Model } from "./Model";
-import { Layer } from "./Layer";
+import { Layer } from "../layers/Layer";
 import ndarray from "ndarray";
 import { axpy, cpsc } from "ndarray-blas-level1";
-import { LossFunction } from "./LossFunction";
+import { LossFunction } from "../lossFunctions/LossFunction";
 import { zeros } from "../ndarrayFunctions/util";
 import { dotProduct } from "../ndarrayFunctions/dotProduct";
-import { Optimizer } from "./Optimizer";
 import R from 'ramda';
-import type { Shape } from "../types";
+import type { Shape, IOptimizer } from "../types";
 
 class BaseTestLayer extends Layer {
-  // compileShape() {
-  //   return this.inputShape
-  // }
-
   compile() {
     return {
       permuteInput: (data: ndarray) => data,
       permuteGradient: (gradient: ndarray) => gradient,
       // noinspection JSUnusedLocalSymbols
-      compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => {},
+      compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => {},
     }
   }
 }
@@ -50,14 +45,14 @@ class MSE extends LossFunction {
   }
 }
 
-test('model is producing a loss', async () => {
+test('model is producing a lossFunctions', async () => {
   class NonceLayer extends BaseTestLayer {
     compile() {
       return {
         permuteInput: (data: ndarray) => data,
         permuteGradient: (gradient: ndarray) => gradient,
         // noinspection JSUnusedLocalSymbols
-        compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => {},
+        compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => {},
       }
     }
   }
