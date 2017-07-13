@@ -1,18 +1,15 @@
-//@flow
-
 import "rxjs/add/observable/from";
 import "rxjs/add/operator/reduce";
 import "rxjs/add/operator/publishBehavior";
 import "rxjs/add/operator/withLatestFrom";
 import "rxjs/add/observable/range";
-import {Subject} from "rxjs/Subject";
+import { Subject } from "rxjs/Subject";
 import { layers, loss, Model, optimizer } from "../index";
-import Observable from 'rxjs/observable';
-import R from 'ramda';
-import ndarray from 'ndarray';
+import Observable from "rxjs/observable";
+import R from "ramda";
+import ndarray from "ndarray";
 
-
-test('it should train to solve XOR', () => {
+test("it should train to solve XOR", () => {
   const model = new Model([1, 2])
     .pipe(new layers.Dense(5))
     .pipe(new layers.activation.Sigmoid())
@@ -31,27 +28,36 @@ test('it should train to solve XOR', () => {
     .publishBehavior(Infinity);
 
   const dataset = [
-    { x: ndarray(new Float32Array([0, 0]), [1, 2]), y: ndarray(new Float32Array([0]), [1, 1]) },
-    { x: ndarray(new Float32Array([1, 0]), [1, 2]), y: ndarray(new Float32Array([1]), [1, 1]) },
-    { x: ndarray(new Float32Array([0, 1]), [1, 2]), y: ndarray(new Float32Array([1]), [1, 1]) },
-    { x: ndarray(new Float32Array([1, 1]), [1, 2]), y: ndarray(new Float32Array([0]), [1, 1]) },
+    {
+      x: ndarray(new Float32Array([0, 0]), [1, 2]),
+      y: ndarray(new Float32Array([0]), [1, 1])
+    },
+    {
+      x: ndarray(new Float32Array([1, 0]), [1, 2]),
+      y: ndarray(new Float32Array([1]), [1, 1])
+    },
+    {
+      x: ndarray(new Float32Array([0, 1]), [1, 2]),
+      y: ndarray(new Float32Array([1]), [1, 1])
+    },
+    {
+      x: ndarray(new Float32Array([1, 1]), [1, 2]),
+      y: ndarray(new Float32Array([0]), [1, 1])
+    }
   ];
 
-  const epoch = Observable
-    .range(1)
-    .share();
+  const epoch = Observable.range(1).share();
 
-  const infiniteEmitter = epoch
-    .flatMap(() => Observable.from(dataset));
+  const infiniteEmitter = epoch.flatMap(() => Observable.from(dataset));
 
   const trainDataEmitter = infiniteEmitter
-    .withLatestFrom(weightenedError, (record, error) => ({record, error}))
-    .takeWhile(({error}) => error > .5);
+    .withLatestFrom(weightenedError, (record, error) => ({ record, error }))
+    .takeWhile(({ error }) => error > 0.5);
 
-  trainDataEmitter
-    .subscribe(learningModel);
+  trainDataEmitter.subscribe(learningModel);
 
-  const arrayToMatrix = (input: number[]) => ndarray(new Float32Array(input), [1, 2]);
+  const arrayToMatrix = (input: number[]) =>
+    ndarray(new Float32Array(input), [1, 2]);
 
   const userModel = model
     .pipe(new layers.activation.Hardmax())

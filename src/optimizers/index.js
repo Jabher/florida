@@ -1,2 +1,2 @@
 // @flow
-export {SGD} from "./SGD";
+export { SGD } from "./SGD";

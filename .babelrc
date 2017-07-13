@@ -1,6 +1,10 @@
 {
   "presets": [
-    ["env", {"node": "8"}],
+    ["env", {
+      "targets": {
+        "node": "8"
+      }
+    }],
     "flow"
   ],
   "plugins": ["transform-class-properties", "transform-export-extensions"]

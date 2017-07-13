@@ -1,2 +1,2 @@
 //@flow
-export {Dense} from "./Dense"
+export { Dense } from "./Dense";

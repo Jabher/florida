@@ -1,12 +1,11 @@
 //@flow
-import { Subject } from "rxjs/Subject"
-import ndarray from 'ndarray';
-
+import { Subject } from "rxjs/Subject";
+import ndarray from "ndarray";
 
 export type Shape = number[];
 
 export interface ICompilable<I, O> {
-  compile<SI: any>(input: Subject<SI, I>): Subject<SI, O>;
+  compile<SI: any>($input: Subject<SI, I>): Subject<SI, O>
 }
 
 export type ILossInput = { y: ndarray, x: ndarray };
@@ -20,5 +19,5 @@ export type IHandler = (input: ndarray) => ndarray;
 export type ILossCompilation = { d0: ILossHandler, d1: ILossHandler };
 
 export interface IOptimizer {
-  compile(shape: Shape): (gradient: ndarray) => void
+  compile(shape: Shape): (gradient: ndarray, input: ndarray) => void
 }

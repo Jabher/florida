@@ -1,4 +1,4 @@
-//@flow
+// @flow
 import { Optimizer } from "./Optimizer";
 import "rxjs/add/operator/toPromise";
 import "rxjs/add/operator/first";
@@ -6,158 +6,165 @@ import { Model } from "../model/Model";
 import { Layer } from "../layers/Layer";
 import ndarray from "ndarray";
 import { axpy, cpsc } from "ndarray-blas-level1";
+import { Observable } from "rxjs/Observable";
 import { LossFunction } from "../lossFunctions/LossFunction";
 import { zeros } from "../ndarrayFunctions/util";
 import { dotProduct } from "../ndarrayFunctions/dotProduct";
+import type { IOptimizer } from "../types";
 
-
-test('optimizers function forces user to override compile method', () => {
+test("optimizers function forces user to override compile method", () => {
   expect(() => new Optimizer().compile([])).toThrow();
 });
 
 class BaseTestLayer extends Layer {
-  // compileShape() {
-  //   return this.inputShape
-  // }
-
-  compile() {
+  _compile() {
     return {
       permuteInput: (data: ndarray) => data,
       permuteGradient: (gradient: ndarray) => gradient,
-      compileApplyOptimizer: (optimizer: Optimizer) => (gradient: ndarray) => {},
-    }
+      compileApplyOptimizer: (optimizer: IOptimizer) => (
+        gradient: ndarray
+      ) => {}
+    };
   }
 }
 
 class MSE extends LossFunction {
-  compile(shape: number[]) {
+  _compile() {
+    const shape = this.inputShape;
     const error0 = zeros(shape);
     const error1 = zeros(shape);
     return {
-      d0: ({ y, yPred }: { y: ndarray, yPred: ndarray }) => {
+      d0: (y: ndarray, yPred: ndarray) => {
         //noinspection JSSuspiciousNameCombination
         cpsc(-1, yPred, error0);
         //noinspection JSSuspiciousNameCombination
         axpy(1, y, error0);
-        const result = dotProduct(error0, error0);
-        return result;
+        return dotProduct(error0, error0);
       },
-      d1: ({ y, yPred }: { y: ndarray, yPred: ndarray }) => {
+      d1: (y: ndarray, yPred: ndarray) => {
         //noinspection JSSuspiciousNameCombination
         cpsc(2, yPred, error1);
         //noinspection JSSuspiciousNameCombination
         axpy(-2, y, error1);
         return error1;
-      },
-    }
+      }
+    };
   }
 }
 
 class SGD extends Optimizer {
   compile(shape: number[]) {
-    return (gradient: ndarray) => {
-
-    }
+    return (gradient: ndarray) => {};
   }
 }
 
-test('model is calling gradient optimizers', async () => {
+test("model is calling $gradient optimizers", async () => {
   const optimizerFn = jest.fn();
-  const compileOptimizerFn = jest.fn((optimizer: Optimizer) => optimizerFn);
+  const compileOptimizerFn = jest.fn((optimizer: IOptimizer) => optimizerFn);
 
   class AddLayer extends BaseTestLayer {
-    compile() {
+    _compile() {
       return {
         permuteInput: (data: ndarray) => data,
         permuteGradient: (gradient: ndarray) => gradient,
-        compileApplyOptimizer: compileOptimizerFn,
-      }
+        compileApplyOptimizer: compileOptimizerFn
+      };
     }
   }
 
   const addLayer = new AddLayer();
 
   const optimizer = new SGD();
-  const train = new Model([2])
-    .pipe(addLayer)
-    .optimize(new MSE(), optimizer)
-    .compile();
+  const model = new Model([2]).pipe(addLayer).optimize(new MSE(), optimizer);
 
+  const train = model.compile();
 
   expect(optimizerFn).toHaveBeenCalledTimes(0);
-  expect(compileOptimizerFn).toHaveBeenCalledTimes(1);
 
   const data = {
     x: ndarray(new Float32Array([-3, -5]), [2]),
-    y: ndarray(new Float32Array([-1, -2]), [2]),
+    y: ndarray(new Float32Array([-1, -2]), [2])
   };
 
-  const promise = train.first().toPromise();
+  const optimizerCallPromise = model.$optimizerCalls.first().toPromise();
+
   train.next(data);
 
-  await promise;
+  await optimizerCallPromise;
 
   expect(optimizerFn).toHaveBeenCalledTimes(1);
-  expect(optimizerFn.mock.calls[0][0].data).toEqual(new Float32Array([
-    2 * (data.x.get(0) - data.y.get(0)),
-    2 * (data.x.get(1) - data.y.get(1)),
-  ]));
+  expect(optimizerFn.mock.calls[0][1]).toEqual(data.x);
+  expect(optimizerFn.mock.calls[0][0].data).toEqual(
+    new Float32Array([
+      2 * (data.x.get(0) - data.y.get(0)),
+      2 * (data.x.get(1) - data.y.get(1))
+    ])
+  );
   expect(compileOptimizerFn).toHaveBeenCalledTimes(1);
+  debugger;
   expect(compileOptimizerFn.mock.calls[0][0]).toBe(optimizer);
 });
 
-test('model is not re-compiling optimizations', async () => {
+test("model is not re-compiling optimizations", async () => {
   const optimizerFn = jest.fn();
-  const compileOptimizerFn = jest.fn((optimizer: Optimizer) => optimizerFn);
+  const compileOptimizerFn = jest.fn((optimizer: IOptimizer) => optimizerFn);
 
   class AddLayer extends BaseTestLayer {
-    compile() {
+    _compile() {
       return {
         permuteInput: (data: ndarray) => data,
         permuteGradient: (gradient: ndarray) => gradient,
-        compileApplyOptimizer: compileOptimizerFn,
-      }
+        compileApplyOptimizer: compileOptimizerFn
+      };
     }
   }
 
   const addLayer = new AddLayer();
 
   const optimizer = new SGD();
-  const train = new Model([2])
-    .pipe(addLayer)
-    .optimize(new MSE(), optimizer)
-    .compile();
+  const model = new Model([2]).pipe(addLayer).optimize(new MSE(), optimizer);
 
+  const train = model.compile();
 
   expect(optimizerFn).toHaveBeenCalledTimes(0);
   expect(compileOptimizerFn).toHaveBeenCalledTimes(1);
 
   const data = {
     x: ndarray(new Float32Array([-3, -5]), [2]),
-    y: ndarray(new Float32Array([-1, -2]), [2]),
+    y: ndarray(new Float32Array([-1, -2]), [2])
   };
 
-  train.next(data);
-  const promise = train.first().toPromise();
-  train.next(data);
+  train.next({
+    x: ndarray(new Float32Array([-3, -5]), [2]),
+    y: ndarray(new Float32Array([-1, -2]), [2])
+  });
+  const optimizerCallPromise = model.$optimizerCalls.first().toPromise();
 
-  await promise; //already validated on prev step
+  train.next({
+    x: ndarray(new Float32Array([-3.5, -5.5]), [2]),
+    y: ndarray(new Float32Array([-1.5, -2.5]), [2])
+  });
+
+  await optimizerCallPromise;
 
   expect(compileOptimizerFn).toHaveBeenCalledTimes(1);
+  debugger;
   expect(optimizerFn).toHaveBeenCalledTimes(2);
-  expect(optimizerFn.mock.calls[0][0].data).toEqual(new Float32Array([
-    2 * (data.x.get(0) - data.y.get(0)),
-    2 * (data.x.get(1) - data.y.get(1)),
-  ]));
+  expect(optimizerFn.mock.calls[0][0].data).toEqual(
+    new Float32Array([
+      2 * (data.x.get(0) - data.y.get(0)),
+      2 * (data.x.get(1) - data.y.get(1))
+    ])
+  );
 });
 
-test('model is propagating gradient', async () => {
+test("model is propagating $gradient", async () => {
   const scaler = 3;
 
   class AddLayer extends BaseTestLayer {
     optimizerFn = jest.fn();
 
-    compile() {
+    _compile() {
       const outputGradient = zeros(this.inputShape);
       return {
         permuteInput: (data: ndarray) => data,
@@ -165,8 +172,8 @@ test('model is propagating gradient', async () => {
           cpsc(scaler, gradient, outputGradient);
           return outputGradient;
         },
-        compileApplyOptimizer: (optimizer: Optimizer) => this.optimizerFn,
-      }
+        compileApplyOptimizer: (optimizer: IOptimizer) => this.optimizerFn
+      };
     }
   }
 
@@ -174,38 +181,40 @@ test('model is propagating gradient', async () => {
   const addLayer2 = new AddLayer();
 
   const optimizer = new SGD();
-  const train = new Model([2])
+  const model = new Model([2])
     .pipe(addLayer1)
     .pipe(addLayer2)
-    .optimize(new MSE(), optimizer)
-    .compile();
-
+    .optimize(new MSE(), optimizer);
+  const train = model.compile();
 
   expect(addLayer1.optimizerFn).toHaveBeenCalledTimes(0);
   expect(addLayer2.optimizerFn).toHaveBeenCalledTimes(0);
 
-  const promise = train.first().toPromise();
-
   const data = {
     x: ndarray(new Float32Array([-3, -5]), [2]),
-    y: ndarray(new Float32Array([-1, -2]), [2]),
+    y: ndarray(new Float32Array([-1, -2]), [2])
   };
+
+  const optimizerCallPromise = model.$optimizerCalls.first().toPromise();
 
   train.next(data);
 
-  await promise; //already validated on prev step
+  await optimizerCallPromise;
 
   expect(addLayer1.optimizerFn).toHaveBeenCalledTimes(1);
   expect(addLayer2.optimizerFn).toHaveBeenCalledTimes(1);
 
+  expect(addLayer1.optimizerFn.mock.calls[0][0].data).toEqual(
+    new Float32Array([
+      scaler * 2 * (data.x.get(0) - data.y.get(0)),
+      scaler * 2 * (data.x.get(1) - data.y.get(1))
+    ])
+  );
 
-  expect(addLayer1.optimizerFn.mock.calls[0][0].data).toEqual(new Float32Array([
-    scaler * 2 * (data.x.get(0) - data.y.get(0)),
-    scaler * 2 * (data.x.get(1) - data.y.get(1)),
-  ]));
-
-  expect(addLayer2.optimizerFn.mock.calls[0][0].data).toEqual(new Float32Array([
-    2 * (data.x.get(0) - data.y.get(0)),
-    2 * (data.x.get(1) - data.y.get(1)),
-  ]));
+  expect(addLayer2.optimizerFn.mock.calls[0][0].data).toEqual(
+    new Float32Array([
+      2 * (data.x.get(0) - data.y.get(0)),
+      2 * (data.x.get(1) - data.y.get(1))
+    ])
+  );
 });
