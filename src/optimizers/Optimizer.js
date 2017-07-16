@@ -1,13 +1,19 @@
 // @flow
 
+
 import ndarray from "ndarray";
-import type { Shape } from "../types";
 
 export class Optimizer {
+  learningRate: number;
+
+  constructor(learningRate: number) {
+    this.learningRate = learningRate;
+  }
+
   // noinspection JSUnusedLocalSymbols
-  compile(shape: Shape): (gradient: ndarray, input: ndarray) => void {
+  compile(weights: ndarray): (gradient: ndarray, input: ndarray) => void {
     throw new Error(
-      `"compile" method of optimizer ${this.constructor.name} should be defined`
+      `"compile" method of optimizer ${this.constructor.name} should be defined`,
     );
   }
 }

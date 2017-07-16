@@ -1,13 +1,12 @@
 // @flow
 import { LossFunction } from "./LossFunction";
 import ndarray from "ndarray";
-import type { Shape } from "../types";
 
 class Loss extends LossFunction {
   _compile() {
     return {
       d0: ({ y, yPred }: { y: ndarray, yPred: ndarray }) => y,
-      d1: ({ y, yPred }: { y: ndarray, yPred: ndarray }) => y
+      d1: ({ y, yPred }: { y: ndarray, yPred: ndarray }) => y,
     };
   }
 }

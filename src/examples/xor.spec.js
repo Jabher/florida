@@ -30,20 +30,20 @@ test("it should train to solve XOR", () => {
   const dataset = [
     {
       x: ndarray(new Float32Array([0, 0]), [1, 2]),
-      y: ndarray(new Float32Array([0]), [1, 1])
+      y: ndarray(new Float32Array([0]), [1, 1]),
     },
     {
       x: ndarray(new Float32Array([1, 0]), [1, 2]),
-      y: ndarray(new Float32Array([1]), [1, 1])
+      y: ndarray(new Float32Array([1]), [1, 1]),
     },
     {
       x: ndarray(new Float32Array([0, 1]), [1, 2]),
-      y: ndarray(new Float32Array([1]), [1, 1])
+      y: ndarray(new Float32Array([1]), [1, 1]),
     },
     {
       x: ndarray(new Float32Array([1, 1]), [1, 2]),
-      y: ndarray(new Float32Array([0]), [1, 1])
-    }
+      y: ndarray(new Float32Array([0]), [1, 1]),
+    },
   ];
 
   const epoch = Observable.range(1).share();

@@ -9,7 +9,7 @@ import { LossFunction } from "../lossFunctions/LossFunction";
 import { zeros } from "../ndarrayFunctions/util";
 import { dotProduct } from "../ndarrayFunctions/dotProduct";
 import R from "ramda";
-import type { IOptimizer, Shape } from "../types";
+import type { IOptimizer } from "../types";
 
 test("model have shape", () => {
   const model = new Model([1, 2]);
@@ -22,9 +22,7 @@ class BaseTestLayer extends Layer {
       permuteInput: (data: ndarray) => data,
       permuteGradient: (gradient: ndarray) => gradient,
       // noinspection JSUnusedLocalSymbols
-      compileApplyOptimizer: (optimizer: IOptimizer) => (
-        gradient: ndarray
-      ) => {}
+      compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => {},
     };
   }
 }
@@ -48,7 +46,7 @@ class MSE extends LossFunction {
         //noinspection JSSuspiciousNameCombination
         axpy(-2, y, error1);
         return error1;
-      }
+      },
     };
   }
 }
@@ -60,24 +58,18 @@ test("model is producing a lossFunctions", async () => {
         permuteInput: (data: ndarray) => data,
         permuteGradient: (gradient: ndarray) => gradient,
         // noinspection JSUnusedLocalSymbols
-        compileApplyOptimizer: (optimizer: IOptimizer) => (
-          gradient: ndarray,
-          input: ndarray
-        ) => {}
+        compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray,
+                                                           input: ndarray) => {},
       };
     }
   }
 
   const model = new Model([2]).pipe(new NonceLayer()).loss(new MSE()).compile();
 
-  const promise = model.first().toPromise();
-
-  model.next({
+  expect(await model.process({
     x: ndarray(new Float32Array([-1, -2]), [2]),
-    y: ndarray(new Float32Array([-3, -5]), [2])
-  });
-
-  expect(await promise).toEqual(
-    R.mean([Math.pow(-1 - -3, 2), Math.pow(-2 - -5, 2)])
+    y: ndarray(new Float32Array([-3, -5]), [2]),
+  })).toEqual(
+    R.mean([Math.pow(-1 - -3, 2), Math.pow(-2 - -5, 2)]),
   );
 });

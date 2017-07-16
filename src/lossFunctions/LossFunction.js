@@ -12,7 +12,7 @@ export class LossFunction {
       this.compilation = this._compile();
     } else if (!R.equals(this.inputShape, shape)) {
       throw new Error(
-        "cannot re-initialize lossFunctions function with different shape"
+        "cannot re-initialize lossFunctions function with different shape",
       );
     }
     return this.compilation;

@@ -2,25 +2,26 @@
 
 import * as R from "ramda";
 import { Observable } from "rxjs/Observable";
-import * as ndarray from "ndarray";
-import type { Shape, IHandler, IOptimizer } from "../types";
+import ndarray from "ndarray";
+import type { IHandler, IOptimizer, Shape } from "../types";
 
-export class Layer {
+export class Layer<O: any> {
   inputShape: Shape;
   outputShape: Shape;
 
   compilation: {
     permuteInput: IHandler,
     permuteGradient: IHandler,
-    compileApplyOptimizer: (
-      optimizer: IOptimizer
-    ) => (gradient: ndarray, input: ndarray) => void
+    compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray, input: ndarray) => void
   };
 
-  constructor() {
+  options: O;
+
+  constructor(options: O) {
     if (this.constructor === Layer) {
       throw new Error("cannot directly instantiate Layer class");
     }
+    this.options = options;
   }
 
   get isCompiled(): boolean {
@@ -46,19 +47,18 @@ export class Layer {
   _compile(): {
     permuteInput: IHandler,
     permuteGradient: IHandler,
-    compileApplyOptimizer: (
-      optimizer: IOptimizer
-    ) => (gradient: ndarray) => void
+    compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => void
   } {
     throw new Error(
       "cannot use Layer.compile; you should re-define it yourself in class " +
-        this.constructor.name
+      this.constructor.name,
     );
   }
 }
 
 export class ConfigurableLayer<T> extends Layer {
   config: T;
+
   constructor(config: T) {
     super();
     this.config = config;

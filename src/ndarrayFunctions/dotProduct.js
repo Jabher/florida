@@ -1,4 +1,5 @@
-import * as ndarray from "ndarray";
+//@flow
+import ndarray from "ndarray";
 
 export function dotProduct(x: ndarray, y: ndarray) {
   let i;

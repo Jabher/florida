@@ -1,5 +1,6 @@
 // @flow
 import "rxjs/add/operator/share";
+import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/withLatestFrom";
 import "rxjs/add/operator/publishBehavior";
@@ -13,9 +14,12 @@ import { Subject } from "rxjs/Subject";
 import { BehaviorSubject } from "rxjs/BehaviorSubject";
 import { Layer } from "../layers/Layer";
 import * as R from "ramda";
-import * as ndarray from "ndarray";
+import ndarray from "ndarray";
 import { LossFunction } from "../lossFunctions/LossFunction";
 import type { ICompilable, ILossInput, IOptimizer, Shape } from "../types";
+
+//global state. this has to be fixed, but not now
+let optimizerCallObservables: Observable<void>[] = [];
 
 export class BaseModel {
   inputModel: ?BaseModel;
@@ -23,15 +27,11 @@ export class BaseModel {
   outputShape: Shape;
   $output: Subject<ndarray, ndarray> = new Subject();
   $gradient: Subject<ndarray, ndarray> = new Subject();
-  $optimizerCalls: Observable<void> = new Subject();
 
   constructor(inputShape: Shape, outputShape: Shape, input: ?BaseModel) {
     this.inputShape = inputShape;
     this.outputShape = outputShape;
     this.inputModel = input;
-    if (this.inputModel) {
-      this.inputModel.$optimizerCalls.subscribe(this.$optimizerCalls);
-    }
   }
 
   pipe(layer: Layer) {
@@ -47,11 +47,9 @@ export class BaseModel {
   }
 
   //todo fix types
-  compile<SI>(
-    $input: Subject<SI, any> = new Subject(),
-    $gradient?: Observable<any>,
-    optimizer?: IOptimizer
-  ): Subject<SI, any> {
+  compile<SI>($input: Subject<SI, any> = new Subject(),
+              $gradient?: Observable<any>,
+              optimizer?: IOptimizer): Subject<SI, any> {
     const $output = this._compile($input, $gradient, optimizer).share();
     $output.subscribe(this.$output);
     if ($gradient) {
@@ -60,11 +58,9 @@ export class BaseModel {
     return $output;
   }
 
-  _compile<SI>(
-    $input: Subject<SI, ndarray>,
-    $gradient?: Observable<ndarray>,
-    optimizer?: IOptimizer
-  ): Subject<SI, ndarray> {
+  _compile<SI>($input: Subject<SI, ndarray>,
+               $gradient?: Observable<ndarray>,
+               optimizer?: IOptimizer): Subject<SI, ndarray> {
     return $input;
   }
 }
@@ -89,18 +85,14 @@ export class PipedModel extends BaseModel {
   get compilation(): {
     permuteInput: Handler,
     permuteGradient: Handler,
-    compileApplyOptimizer: (
-      optimizer: IOptimizer
-    ) => (gradient: ndarray, input: ndarray) => void
+    compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray, input: ndarray) => void
   } {
     return this.layer.compilation;
   }
 
-  _compile<SI>(
-    $input_: Subject<SI, ndarray> = new Subject(),
-    $gradient?: Observable<ndarray>,
-    optimizer?: IOptimizer
-  ): Subject<SI, ndarray> {
+  _compile<SI>($input_: Subject<SI, ndarray> = new Subject(),
+               $gradient?: Observable<ndarray>,
+               optimizer?: IOptimizer): Subject<SI, ndarray> {
     const $outputGradient = $gradient
       ? $gradient.map(this.compilation.permuteGradient).share()
       : undefined;
@@ -111,17 +103,19 @@ export class PipedModel extends BaseModel {
     const $input = this.inputModel.compile($input_, $outputGradient, optimizer);
 
     if (optimizer && $gradient && this.compilation.compileApplyOptimizer) {
-      const $optimizerCalls = $gradient
-        .withLatestFrom(
-          $input,
-          this.compilation.compileApplyOptimizer(optimizer)
-        )
-        .share();
-      $optimizerCalls.subscribe();
-      $optimizerCalls.subscribe(this.$optimizerCalls);
-    }
+      optimizerCallObservables.push(
+        $gradient
+          .withLatestFrom(
+            $input,
+            this.compilation.compileApplyOptimizer(optimizer),
+          ).share(),
+      );
 
-    return $input.map(this.compilation.permuteInput);
+      return $input
+        .map(this.compilation.permuteInput);
+    } else {
+      return $input.map(this.compilation.permuteInput);
+    }
   }
 }
 
@@ -133,25 +127,21 @@ export class OptimizingModel extends BaseModel
   inputShape: Shape;
   optimizer: IOptimizer;
 
-  constructor(
-    inputModel: BaseModel,
-    lossFunction: LossFunction,
-    optimizer: IOptimizer
-  ) {
+  constructor(inputModel: BaseModel,
+              lossFunction: LossFunction,
+              optimizer: IOptimizer) {
+    lossFunction.compile(inputModel.outputShape);
     super(inputModel.inputShape, [], inputModel);
     this.lossFunction = lossFunction;
     this.optimizer = optimizer;
-
-    this.lossFunction.compile(this.inputShape);
   }
 
   // noinspection JSCheckFunctionSignatures
-  _compile<SI: any>(
-    $input_: Subject<SI, ILossInput> = new Subject()
-  ): Subject<SI, number> {
+  _compile<SI: any>($input_: Subject<SI, ILossInput> = new Subject()): Subject<SI, number> {
     const $input = $input_.share();
     const $gradient = new Subject();
     const $inputY = $input.map(({ y }) => y).share();
+    optimizerCallObservables = [];
     const $modelY = this.inputModel
       ._compile($input.map(({ x }) => x), $gradient, this.optimizer)
       .share();
@@ -161,11 +151,13 @@ export class OptimizingModel extends BaseModel
       .subscribe($gradient);
 
     return $inputY
+      .withLatestFrom(Observable.combineLatest(...optimizerCallObservables), i => i)
       .withLatestFrom($modelY, this.lossFunction.compilation.d0)
       .map(asum)
       .map(
-        R.multiply(1 / this.inputModel.outputShape.reduce((a, b) => a * b, 1))
-      );
+        R.multiply(1 / this.inputModel.outputShape.reduce((a, b) => a * b, 1)),
+      )
+      .share()
   }
 }
 
@@ -182,11 +174,9 @@ export class LossModel extends BaseModel
     this.lossFunction = lossFunction;
   }
 
-  _compile<SI: any>(
-    $input_: Subject<SI, ILossInput>,
-    $gradient_?: Observable<ndarray>,
-    optimizer?: IOptimizer
-  ): Subject<SI, number> {
+  _compile<SI: any>($input_: Subject<SI, ILossInput>,
+                    $gradient_?: Observable<ndarray>,
+                    optimizer?: IOptimizer): Subject<SI, number> {
     const $input = $input_.share();
     const $inputY = $input.map(({ y }) => y);
     const $modelY = this.inputModel.compile($input.map(({ x }) => x)).share();
@@ -195,7 +185,7 @@ export class LossModel extends BaseModel
       .withLatestFrom($modelY, this.lossFunction.compilation.d0)
       .map(asum)
       .map(
-        R.multiply(1 / this.inputModel.outputShape.reduce((a, b) => a * b, 1))
+        R.multiply(1 / this.inputModel.outputShape.reduce((a, b) => a * b, 1)),
       )
       .share();
   }

@@ -13,9 +13,7 @@ class BaseTestLayer extends Layer {
     return {
       permuteInput: (data: ndarray) => data,
       permuteGradient: (gradient: ndarray) => gradient,
-      compileApplyOptimizer: (optimizer: IOptimizer) => (
-        gradient: ndarray
-      ) => {}
+      compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => {},
     };
   }
 }
@@ -85,16 +83,14 @@ test("model is transforming layers", () => {
   expect(new Model([1, 2]).pipe(output)).toHaveProperty("outputShape", [
     2,
     4,
-    8
+    8,
   ]);
 });
 
 test("model is passing data", async () => {
   const model = new Model([1, 2]).pipe(new BaseTestLayer()).compile();
 
-  const promise = model.first().toPromise();
-  model.next(ndarray(new Float32Array([-1, -2]), [1, 2]));
-  const result = await promise;
+  const result = await await model.process(ndarray(new Float32Array([-1, -2]), [1, 2]));
 
   expect(result).toMatchSnapshot();
 });
@@ -102,9 +98,7 @@ test("model is passing data", async () => {
 test("model is calling compileActivate once", async () => {
   const model = new Model([1, 2]).pipe(new BaseTestLayer()).compile();
 
-  const promise = model.first().toPromise();
-  model.next(ndarray(new Float32Array([-1, -2]), [1, 2]));
-  const result = await promise;
+  const result = await model.process(ndarray(new Float32Array([-1, -2]), [1, 2]));
 
   expect(result).toMatchSnapshot();
 });
@@ -112,11 +106,10 @@ test("model is calling compileActivate once", async () => {
 test("model is emitting data to side-observables", async () => {
   const model = new Model([1, 2]).pipe(new BaseTestLayer());
 
-  const promise = model.$output.first().toPromise();
-  model.compile().next(ndarray(new Float32Array([-1, -2]), [1, 2]));
-  const result = await promise;
-
-  expect(result).toMatchSnapshot();
+  expect(await model
+    .compile()
+    .process(ndarray(new Float32Array([-1, -2]), [1, 2])),
+  ).toMatchSnapshot();
 });
 
 test("model is transforming data", async () => {
@@ -131,20 +124,14 @@ test("model is transforming data", async () => {
           return output;
         },
         permuteGradient: (gradient: ndarray) => gradient,
-        compileApplyOptimizer: (optimizer: IOptimizer) => (
-          gradient: ndarray
-        ) => {}
+        compileApplyOptimizer: (optimizer: IOptimizer) => (gradient: ndarray) => {},
       };
     }
   }
 
   const model = new Model([2]).pipe(new TestLayer()).compile();
 
-  const promise = model.first().toPromise();
-  model.next(ndarray(new Float32Array([-1, -2]), [2]));
-  expect((await promise).data).toEqual(new Float32Array([-2, -4]));
+  expect(await model.process(ndarray(new Float32Array([-1, -2]), [2]))).toHaveProperty('data', new Float32Array([-2, -4]));
 
-  const promise2 = model.first().toPromise();
-  model.next(ndarray(new Float32Array([-1, -2]), [2]));
-  expect((await promise2).data).toEqual(new Float32Array([-3, -6]));
+  expect(await model.process(ndarray(new Float32Array([-1, -2]), [2]))).toHaveProperty('data', new Float32Array([-3, -6]));
 });

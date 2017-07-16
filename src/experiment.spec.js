@@ -7,7 +7,7 @@ test("recast", () => {
   $s.subscribe(
     console.log.bind(null, "next"),
     console.log.bind(null, "error"),
-    console.log.bind(null, "complete")
+    console.log.bind(null, "complete"),
   );
 
   const $s_ = $s.share();

@@ -698,6 +698,8 @@ declare class rxjs$Observer<T> {
 }
 
 declare class rxjs$Subject<I, O> extends rxjs$Observable<O> mixins rxjs$Observer<I> {
+  process(input: I): Promise<O>;
+
   asObservable(): rxjs$Observable<O>;
 
   observers: Array<rxjs$Observer<O>>;

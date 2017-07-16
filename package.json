@@ -19,9 +19,11 @@
     "flow-stats": "0.0.4",
     "flow-typed": "^2.1.2",
     "jest": "^20.0.4",
-    "jest-environment-node-debug": "^2.0.0"
+    "jest-environment-node-debug": "^2.0.0",
+    "seed-random": "^2.2.0"
   },
   "dependencies": {
+    "cwise": "^1.0.10",
     "cwise-compiler": "^1.1.3",
     "ndarray": "^1.0.18",
     "ndarray-blas-level1": "^1.1.3",
@@ -39,7 +41,10 @@
     "testMatch": [
       "**/src/**/*.spec.js"
     ],
-    "collectCoverage": false
+    "collectCoverage": false,
+    "setupFiles": [
+      "./src/_jest_setup.js"
+    ]
   },
   "false": {}
 }
