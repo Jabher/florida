@@ -5,7 +5,7 @@ import "rxjs/add/operator/withLatestFrom";
 import "rxjs/add/observable/range";
 import { Subject } from "rxjs/Subject";
 import { layers, loss, Model, optimizer } from "../index";
-import Observable from "rxjs/observable";
+import Observable from "rxjs/Observable";
 import R from "ramda";
 import ndarray from "ndarray";
 
